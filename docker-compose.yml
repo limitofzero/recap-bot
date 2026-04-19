@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: recap_bot_db
+    environment:
+      POSTGRES_USER: recap_user
+      POSTGRES_PASSWORD: recap_password
+      POSTGRES_DB: recap_bot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recap_user -d recap_bot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - recap_network
+
+  # Recap Bot
+  recap-bot:
+    build: .
+    container_name: recap_bot_app
+    environment:
+      TELOXIDE_TOKEN: ${TELOXIDE_TOKEN}
+      DATABASE_URL: postgresql://recap_user:recap_password@postgres:5432/recap_bot
+      RUST_LOG: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - recap_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  recap_network:
+    driver: bridge

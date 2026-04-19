@@ -1,0 +1,12 @@
+[package]
+name = "recap-bot"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+teloxide = { version = "0.17", features = ["macros"] }
+log = "0.4"
+pretty_env_logger = "0.5"
+tokio = { version = "1.40", features = ["rt-multi-thread", "macros"] }
+dotenv = "0.15"
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "migrate"] }
