@@ -1,5 +1,5 @@
+use sqlx::{migrate, postgres::PgPoolOptions};
 use teloxide::prelude::*;
-use sqlx::{postgres::PgPoolOptions, migrate};
 
 #[tokio::main]
 async fn main() {
@@ -9,8 +9,7 @@ async fn main() {
 
     let bot = Bot::from_env();
 
-    let db_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     let pool = PgPoolOptions::new()
         .max_connections(3)
@@ -26,7 +25,8 @@ async fn main() {
         .await
         .inspect(|_| {
             log::info!("migrations are ok");
-        }).expect("migrations failed");
+        })
+        .expect("migrations failed");
 
     teloxide::repl(bot, |bot: Bot, msg: Message| async move {
         bot.send_dice(msg.chat.id).await?;
