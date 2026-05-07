@@ -412,6 +412,15 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "dptree"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d81175dab5ec79c30e0576df2ed2c244e1721720c302000bb321b107e82e265c"
+dependencies = [
+ "futures",
+]
+
+[[package]]
+name = "dptree"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db96968fcf52fe063a98c75df1d1f2b1fba304e7ae29b72fdc81c1165b7e2fd0"
@@ -1604,6 +1613,7 @@ name = "recap-bot"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "dptree 0.3.0",
  "log",
  "pretty_env_logger",
  "serde",
@@ -2369,7 +2379,7 @@ dependencies = [
  "axum",
  "bytes",
  "derive_more",
- "dptree",
+ "dptree 0.5.1",
  "either",
  "futures",
  "log",

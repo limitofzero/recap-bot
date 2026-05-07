@@ -1,5 +1,6 @@
 use sqlx::{migrate, postgres::PgPoolOptions, PgPool};
 use teloxide::dispatching::dialogue::GetChatId;
+use teloxide::dptree;
 use teloxide::prelude::*;
 use teloxide::types::MessageKind;
 
@@ -34,7 +35,14 @@ async fn main() {
         })
         .expect("migrations failed");
 
-    let _ = Dispatcher::builder(bot.clone(), Update::filter_message().endpoint(handle_message));
+    let handler = Update::filter_message().endpoint(handle_message);
+
+    Dispatcher::builder(bot.clone(), handler)
+        .dependencies(dptree::deps![pool])
+        .enable_ctrlc_handler()
+        .build()
+        .dispatch()
+        .await;
 
     teloxide::repl(bot, |bot: Bot, msg: Message| async move {
         bot.send_dice(msg.chat.id).await?;
@@ -57,6 +65,7 @@ async fn save_message(pool: &PgPool, msg: Message) -> Result<(), AppError> {
         .chat_id()
         .map(|id| id.0)
         .ok_or(AppError::EmptyChatId(message_id))?;
+    let chat_title = msg.chat.title().unwrap_or_default();
     let created_at = msg.date;
     let user_id = msg
         .from
@@ -66,6 +75,20 @@ async fn save_message(pool: &PgPool, msg: Message) -> Result<(), AppError> {
 
     match &msg.kind {
         MessageKind::Common(content) => {
+            sqlx::query!(
+                r#"
+                    INSERT INTO chats (id, title)
+                    VALUES ($1, $2)
+                    ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title
+                    WHERE chats.title IS DISTINCT FROM EXCLUDED.title
+                "#,
+                chat_id,
+                chat_title,
+            )
+            .execute(pool)
+            .await
+            .map_err(|err| AppError::InsertChatError(chat_id, err.to_string()))?;
+
             let text = msg.text().unwrap_or_default();
             if let Some(edited_date) = content.edit_date {
                 sqlx::query!(
@@ -81,7 +104,8 @@ async fn save_message(pool: &PgPool, msg: Message) -> Result<(), AppError> {
                     edited_date,
                     chat_id,
                     message_id,
-                ).execute(pool)
+                )
+                .execute(pool)
                 .await
                 .map_err(|err| AppError::UpdateMessage(err.to_string()))?;
             } else {
