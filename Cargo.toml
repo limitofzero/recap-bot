@@ -9,4 +9,7 @@ log = "0.4"
 pretty_env_logger = "0.5"
 tokio = { version = "1.40", features = ["rt-multi-thread", "macros"] }
 dotenv = "0.15"
-sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "migrate", "macros"] }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio-rustls", "migrate", "macros", "chrono"] }
+serde_json = "1"
+thiserror = "2.0.18"
+serde = { version = "1", features = ["derive"] }
