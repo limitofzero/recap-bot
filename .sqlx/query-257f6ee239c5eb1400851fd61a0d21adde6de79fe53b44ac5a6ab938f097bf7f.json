@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO chats (id, title)\n                VALUES ($1, $2)\n                ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title\n                WHERE chats.title IS DISTINCT FROM EXCLUDED.title\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "257f6ee239c5eb1400851fd61a0d21adde6de79fe53b44ac5a6ab938f097bf7f"
+}

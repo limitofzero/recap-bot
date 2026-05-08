@@ -8,6 +8,12 @@ use crate::errors::AppError;
 pub mod domain;
 pub mod errors;
 
+#[derive(Debug)]
+pub struct InsertChat<'a> {
+    chat_id: i64,
+    title: &'a str,
+}
+
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
@@ -35,7 +41,8 @@ async fn main() {
         })
         .expect("migrations failed");
 
-    let handler = Update::filter_message().endpoint(handle_message);
+    let handler = Update::filter_message()
+        .endpoint(handle_message);
 
     Dispatcher::builder(bot.clone(), handler)
         .dependencies(dptree::deps![pool])
@@ -59,6 +66,42 @@ async fn handle_message(_: Bot, msg: Message, pool: &PgPool) -> ResponseResult<(
     Ok(())
 }
 
+async fn update_message(pool: &PgPool, chat: InsertChat, msg: Message) -> Result<(), AppError> {
+    insert_chat(pool, chat).await?;
+
+    // match msg.kind {
+    //     MessageKind::Common(content) => {
+    //         sqlx::query!(
+    //             r#"
+    //                 UPDATE 
+    //             "#
+    //         )
+    //     }
+    // }
+
+    Ok(())
+}
+
+async fn insert_chat(pool: &PgPool, chat: InsertChat<'_>) -> Result<(), AppError> {
+    let chat_id = chat.chat_id;
+    let title = chat.title;
+    sqlx::query!(
+            r#"
+                INSERT INTO chats (id, title)
+                VALUES ($1, $2)
+                ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title
+                WHERE chats.title IS DISTINCT FROM EXCLUDED.title
+            "#,
+            chat_id,
+            title,
+        )
+        .execute(pool)
+        .await
+        .map_err(|err| AppError::InsertChatError(chat_id, err.to_string()))?;
+
+    Ok(())
+}
+
 async fn save_message(pool: &PgPool, msg: Message) -> Result<(), AppError> {
     let message_id = msg.id.0 as i64;
     let chat_id = msg
@@ -75,19 +118,7 @@ async fn save_message(pool: &PgPool, msg: Message) -> Result<(), AppError> {
 
     match &msg.kind {
         MessageKind::Common(content) => {
-            sqlx::query!(
-                r#"
-                    INSERT INTO chats (id, title)
-                    VALUES ($1, $2)
-                    ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title
-                    WHERE chats.title IS DISTINCT FROM EXCLUDED.title
-                "#,
-                chat_id,
-                chat_title,
-            )
-            .execute(pool)
-            .await
-            .map_err(|err| AppError::InsertChatError(chat_id, err.to_string()))?;
+            insert_chat(pool, InsertChat { chat_id, title: chat_title }).await?;
 
             let text = msg.text().unwrap_or_default();
             if let Some(edited_date) = content.edit_date {
