@@ -1,6 +1,5 @@
 use sqlx::{migrate, postgres::PgPoolOptions, PgPool};
 use teloxide::dispatching::dialogue::GetChatId;
-use teloxide::dptree;
 use teloxide::prelude::*;
 use teloxide::types::MessageKind;
 
@@ -41,63 +40,44 @@ async fn main() {
         })
         .expect("migrations failed");
 
-    let handler = Update::filter_message()
-        .endpoint(handle_message);
+    let handler = Update::filter_message().endpoint({
+        let pool = pool.clone();
+        move |_: Bot, msg: Message| {
+            let pool = pool.clone();
+            async move {
+                let _ = save_message(&pool, msg).await.inspect_err(|err| {
+                    log::error!("handle message error: {}", err);
+                });
+                Ok::<(), teloxide::RequestError>(())
+            }
+        }
+    });
 
-    Dispatcher::builder(bot.clone(), handler)
-        .dependencies(dptree::deps![pool])
+    log::info!("service is started");
+
+    Dispatcher::builder(bot, handler)
         .enable_ctrlc_handler()
         .build()
         .dispatch()
         .await;
-
-    teloxide::repl(bot, |bot: Bot, msg: Message| async move {
-        bot.send_dice(msg.chat.id).await?;
-        Ok(())
-    })
-    .await;
-}
-
-async fn handle_message(_: Bot, msg: Message, pool: &PgPool) -> ResponseResult<()> {
-    let _ = save_message(pool, msg).await.inspect_err(|err| {
-        log::error!("handle message error: {}", err.to_string());
-    });
-
-    Ok(())
-}
-
-async fn update_message(pool: &PgPool, chat: InsertChat, msg: Message) -> Result<(), AppError> {
-    insert_chat(pool, chat).await?;
-
-    // match msg.kind {
-    //     MessageKind::Common(content) => {
-    //         sqlx::query!(
-    //             r#"
-    //                 UPDATE 
-    //             "#
-    //         )
-    //     }
-    // }
-
-    Ok(())
 }
 
 async fn insert_chat(pool: &PgPool, chat: InsertChat<'_>) -> Result<(), AppError> {
     let chat_id = chat.chat_id;
     let title = chat.title;
     sqlx::query!(
-            r#"
+        r#"
                 INSERT INTO chats (id, title)
                 VALUES ($1, $2)
                 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title
                 WHERE chats.title IS DISTINCT FROM EXCLUDED.title
             "#,
-            chat_id,
-            title,
-        )
-        .execute(pool)
-        .await
-        .map_err(|err| AppError::InsertChatError(chat_id, err.to_string()))?;
+        chat_id,
+        title,
+    )
+    .execute(pool)
+    .await
+    .map_err(|err| AppError::InsertChatError(chat_id, err.to_string()))?;
 
     Ok(())
 }
@@ -116,55 +96,49 @@ async fn save_message(pool: &PgPool, msg: Message) -> Result<(), AppError> {
         .map(|u| u.id.0)
         .ok_or(AppError::EmptyUserId(message_id, chat_id))?;
 
-    match &msg.kind {
-        MessageKind::Common(content) => {
-            insert_chat(pool, InsertChat { chat_id, title: chat_title }).await?;
+    if let MessageKind::Common(_) = &msg.kind {
+        insert_chat(
+                pool,
+                InsertChat {
+                    chat_id,
+                    title: chat_title,
+                },
+            )
+            .await?;
 
             let text = msg.text().unwrap_or_default();
-            if let Some(edited_date) = content.edit_date {
-                sqlx::query!(
-                    r#"
-                        UPDATE messages
-                        SET text = $1,
-                        edited_at = $2,
-                        chat_id = $3,
-                        message_id = $4
-                        WHERE chat_id = $3 AND message_id = $4;
-                    "#,
-                    text,
-                    edited_date,
-                    chat_id,
-                    message_id,
-                )
-                .execute(pool)
-                .await
-                .map_err(|err| AppError::UpdateMessage(err.to_string()))?;
-            } else {
-                sqlx::query!(
-                    r#"
+            let edited_at = msg.edit_date().copied();
+
+            sqlx::query!(
+                r#"
                         INSERT INTO messages (
                         chat_id,
                         message_id,
                         user_id,
                         text,
-                        created_at
+                        created_at,
+                        edited_at
                         )
-                        VALUES ($1, $2, $3, $4, $5)
-                        ON CONFLICT (chat_id, message_id) DO NOTHING
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                        ON CONFLICT (chat_id, message_id)
+                        DO UPDATE
+                        SET text = EXCLUDED.text,
+                        edited_at = COALESCE(EXCLUDED.edited_at, messages.edited_at)
                     "#,
-                    chat_id,
-                    message_id,
-                    user_id as i64,
-                    text,
-                    created_at,
-                )
-                .execute(pool)
-                .await
-                .map_err(|err| AppError::SaveMessage(err.to_string()))?;
-            }
-        }
-        _ => {}
-    };
+                chat_id,
+                message_id,
+                user_id as i64,
+                text,
+                created_at,
+                edited_at
+            )
+            .execute(pool)
+            .await
+            .inspect(|_| {
+                log::debug!("message was saved (chat={}, msg={})", chat_id, message_id);
+            })
+            .map_err(|err| AppError::SaveMessage(err.to_string()))?;
+    }
 
     Ok(())
 }

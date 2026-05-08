@@ -1,0 +1,14 @@
+target/
+.git/
+.github/
+.vscode/
+.idea/
+.claude/
+.env
+.env.*
+*.md
+README*
+LICENSE*
+docker-compose*.yml
+Dockerfile
+.dockerignore
