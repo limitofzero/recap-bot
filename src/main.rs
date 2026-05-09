@@ -40,22 +40,27 @@ async fn main() {
         })
         .expect("migrations failed");
 
-    let handler = Update::filter_message().endpoint({
-        let pool = pool.clone();
-        move |_: Bot, msg: Message| {
-            let pool = pool.clone();
-            async move {
-                let _ = save_message(&pool, msg).await.inspect_err(|err| {
-                    log::error!("handle message error: {}", err);
-                });
-                Ok::<(), teloxide::RequestError>(())
-            }
-        }
-    });
+    let msg_handler = |_: Bot, msg: Message, pool: PgPool| async move {
+        let _ = save_message(&pool, msg)
+            .await
+            .inspect_err(|err| {
+                log::error!("handle message error: {}", err);
+            })
+            .inspect_err(|err| {
+                log::error!("msg handler error: {}", err);
+            });
 
-    log::info!("service is started");
+        Ok::<(), teloxide::RequestError>(())
+    };
 
-    Dispatcher::builder(bot, handler)
+    let common_handler = dptree::entry()
+        .branch(Update::filter_message().endpoint(msg_handler))
+        .branch(Update::filter_edited_message().endpoint(msg_handler));
+
+    log::info!("Dispatcher starting");
+
+    Dispatcher::builder(bot, common_handler)
+        .dependencies(dptree::deps![pool])
         .enable_ctrlc_handler()
         .build()
         .dispatch()
@@ -98,19 +103,19 @@ async fn save_message(pool: &PgPool, msg: Message) -> Result<(), AppError> {
 
     if let MessageKind::Common(_) = &msg.kind {
         insert_chat(
-                pool,
-                InsertChat {
-                    chat_id,
-                    title: chat_title,
-                },
-            )
-            .await?;
+            pool,
+            InsertChat {
+                chat_id,
+                title: chat_title,
+            },
+        )
+        .await?;
 
-            let text = msg.text().unwrap_or_default();
-            let edited_at = msg.edit_date().copied();
+        let text = msg.text().unwrap_or_default();
+        let edited_at = msg.edit_date().copied();
 
-            sqlx::query!(
-                r#"
+        sqlx::query!(
+            r#"
                         INSERT INTO messages (
                         chat_id,
                         message_id,
@@ -125,19 +130,19 @@ async fn save_message(pool: &PgPool, msg: Message) -> Result<(), AppError> {
                         SET text = EXCLUDED.text,
                         edited_at = COALESCE(EXCLUDED.edited_at, messages.edited_at)
                     "#,
-                chat_id,
-                message_id,
-                user_id as i64,
-                text,
-                created_at,
-                edited_at
-            )
-            .execute(pool)
-            .await
-            .inspect(|_| {
-                log::debug!("message was saved (chat={}, msg={})", chat_id, message_id);
-            })
-            .map_err(|err| AppError::SaveMessage(err.to_string()))?;
+            chat_id,
+            message_id,
+            user_id as i64,
+            text,
+            created_at,
+            edited_at
+        )
+        .execute(pool)
+        .await
+        .inspect(|_| {
+            log::debug!("message was saved (chat={}, msg={})", chat_id, message_id);
+        })
+        .map_err(|err| AppError::SaveMessage(err.to_string()))?;
     }
 
     Ok(())

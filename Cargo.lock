@@ -1604,6 +1604,7 @@ name = "recap-bot"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "dptree",
  "log",
  "pretty_env_logger",
  "serde",

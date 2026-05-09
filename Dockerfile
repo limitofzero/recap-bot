@@ -27,7 +27,7 @@ USER botuser
 # EXPOSE 8080
 
 # Set environment variables
-ENV RUST_LOG=info
+ENV RUST_LOG=debug
 
 # Run the bot
 CMD ["./recap-bot"]

@@ -28,7 +28,7 @@ services:
     environment:
       TELOXIDE_TOKEN: ${TELOXIDE_TOKEN}
       DATABASE_URL: postgresql://recap_user:recap_password@postgres:5432/recap_bot
-      RUST_LOG: info
+      RUST_LOG: recap_bot=debug,sqlx=debug,info
     depends_on:
       postgres:
         condition: service_healthy
