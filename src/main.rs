@@ -6,6 +6,7 @@ use teloxide::types::MessageKind;
 use crate::errors::AppError;
 pub mod domain;
 pub mod errors;
+pub mod health;
 
 #[derive(Debug)]
 pub struct InsertChat<'a> {
@@ -57,14 +58,20 @@ async fn main() {
         .branch(Update::filter_message().endpoint(msg_handler))
         .branch(Update::filter_edited_message().endpoint(msg_handler));
 
-    log::info!("Dispatcher starting");
+    let pool_for_health = pool.clone();
+    tokio::spawn(async move {
+        if let Err(err) = health::run(pool_for_health, 8080).await {
+            log::error!("health server is crushed: {}", err);
+        }
+    });
 
-    Dispatcher::builder(bot, common_handler)
+    let mut dispatcher = Dispatcher::builder(bot, common_handler)
         .dependencies(dptree::deps![pool])
         .enable_ctrlc_handler()
-        .build()
-        .dispatch()
-        .await;
+        .build();
+
+    log::info!("Dispatcher starting");
+    dispatcher.dispatch().await;
 }
 
 async fn insert_chat(pool: &PgPool, chat: InsertChat<'_>) -> Result<(), AppError> {

@@ -29,6 +29,14 @@ services:
       TELOXIDE_TOKEN: ${TELOXIDE_TOKEN}
       DATABASE_URL: postgresql://recap_user:recap_password@postgres:5432/recap_bot
       RUST_LOG: recap_bot=debug,sqlx=debug,info
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    ports:
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
