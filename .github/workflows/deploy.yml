@@ -60,6 +60,10 @@ jobs:
 
             kubectl apply -f /tmp/k8s-manifests/deployment.yaml
 
+            kubectl apply -f /tmp/k8s-manifests/service.yaml
+            
+            kubectl apply -f /tmp/k8s-manifests/service-monitor.yaml
+
             kubectl rollout restart deployment/recap-bot -n recap-bot
 
             kubectl rollout status deployment/recap-bot -n recap-bot --timeout=2m
