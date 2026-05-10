@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [build-image]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Copy manifests to server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: ".github/k8s/*.yaml"
+          target: "/tmp/k8s-manifests"
+          strip_components: 2
+
+      - name: Deploy to k8s
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          TELOXIDE_TOKEN: ${{ secrets.TELOXIDE_TOKEN }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: POSTGRES_PASSWORD,TELOXIDE_TOKEN
+          script: |
+            export KUBECONFIG=/home/limitofzero/.kube/config
+            set -e
+
+            kubectl apply -f /tmp/k8s-manifests/namespace.yaml
+
+            kubectl -n recap-bot create secret generic postgres-secret \
+              --from-literal=POSTGRES_USER=recap_bot \
+              --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+              --from-literal=POSTGRES_DB=recap_bot \
+              --dry-run=client -o yaml | kubectl apply -f -
+
+            kubectl apply -f /tmp/k8s-manifests/postgres.yaml
+
+            kubectl rollout status statefulset/postgres -n recap-bot --timeout=2m
+
+            kubectl -n recap-bot create secret generic recap-bot-secrets \
+              --from-literal=TELOXIDE_TOKEN="$TELOXIDE_TOKEN" \
+              --from-literal=DATABASE_URL="postgresql://recap_bot:$POSTGRES_PASSWORD@postgres.recap-bot.svc.cluster.local:5432/recap_bot" \
+              --dry-run=client -o yaml | kubectl apply -f -
+
+            kubectl apply -f /tmp/k8s-manifests/deployment.yaml
+
+            kubectl rollout restart deployment/recap-bot -n recap-bot
+
+            kubectl rollout status deployment/recap-bot -n recap-bot --timeout=2m
