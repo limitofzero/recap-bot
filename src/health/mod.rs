@@ -17,7 +17,7 @@ async fn health(State(pool): State<PgPool>) -> StatusCode {
     match request.await {
         Ok(_) => StatusCode::OK,
         Err(err) => {
-            log::error!("db connection error: {}", err.to_string());
+            log::error!("db connection error: {}", err);
             StatusCode::SERVICE_UNAVAILABLE
         }
     }
