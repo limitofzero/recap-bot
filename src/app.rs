@@ -8,5 +8,6 @@ use crate::services::ai_client::AiClient;
 pub struct AppState {
     pub pool: PgPool,
     pub ai_client: Arc<AiClient>,
+    pub ai_recap_system_prompt: String,
 }
 

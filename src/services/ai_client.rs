@@ -1,19 +1,19 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use reqwest::Client;
 
 use crate::errors::AppError;
 
 #[derive(Debug, serde::Serialize)]
-struct Message {
-    role: String,
-    content: String,
+struct Message<'a> {
+    role: &'a str,
+    content: &'a str,
 }
 
 #[derive(Debug, serde::Serialize)]
-struct RequestBody {
-    messages: Vec<Message>,
-    model: String,
+struct RequestBody<'a> {
+    model: &'a str,
+    messages: Vec<Message<'a>>,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -41,7 +41,7 @@ pub struct Usage {
 }
 
 pub struct AiClient {
-    client: Arc<Client>,
+    client: Client,
     api_key: String,
     uri: String,
     model: String,
@@ -54,51 +54,72 @@ impl AiClient {
             .build()
             .expect("failed to build reqwest client");
         Self {
-            client: Arc::new(client),
+            client,
             api_key,
             uri,
             model,
         }
     }
 
-    pub async fn make_request(&self, system_prompt: &str, user_prompt: String) -> Result<String, AppError> {
+    pub async fn make_request(
+        &self,
+        system_prompt: &str,
+        user_prompt: &str,
+    ) -> Result<String, AppError> {
         let body = RequestBody {
-            model: self.model.clone(),
+            model: &self.model,
             messages: vec![
-                Message {
-                    role: "system".to_string(),
-                    content: system_prompt.to_string()
-                },
-                Message {
-                    role: "user".to_string(),
-                    content: user_prompt,
-                }
-            ]
+                Message { role: "system", content: &system_prompt },
+                Message { role: "user",   content: user_prompt },
+            ],
         };
 
-        let uri = self.uri.clone();
-        let api_key = self.api_key.clone();
-        let result = self.client.post(uri)
-            .bearer_auth(api_key)
+        let response = self
+            .client
+            .post(&self.uri)
+            .bearer_auth(&self.api_key)
             .json(&body)
             .send()
             .await
-            .map_err(|err| AppError::AiResponse(err.to_string()))?;
+            .map_err(|err| AppError::AiResponse(format!("send: {}", err)))?;
 
-        if !result.status().is_success() {
-            let status = result.status();
-            let body = result.text().await.unwrap_or_default();
-            return Err(AppError::AiResponse(format!("status: {}, body: {}", status, body)));
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            return Err(AppError::AiResponse(format!(
+                "status: {}, body: {}",
+                status, body
+            )));
         }
 
-        let parsed: ChatResponse = result.json().await
+        let parsed: ChatResponse = response
+            .json()
+            .await
             .map_err(|e| AppError::AiResponse(format!("parse: {}", e)))?;
 
-        let choices = parsed.choices
+        if let Some(usage) = &parsed.usage {
+            log::debug!(
+                "LLM usage: prompt={} completion={} total={}",
+                usage.prompt_tokens,
+                usage.completion_tokens,
+                usage.total_tokens
+            );
+            metrics::counter!("bot_llm_tokens_total", "kind" => "prompt")
+                .increment(usage.prompt_tokens as u64);
+            metrics::counter!("bot_llm_tokens_total", "kind" => "completion")
+                .increment(usage.completion_tokens as u64);
+        }
+
+        let choice = parsed
+            .choices
             .into_iter()
             .next()
-            .ok_or_else(|| AppError::AiResponse("no choinces in response".to_string()))?;
+            .ok_or_else(|| AppError::AiResponse("no choices in response".to_string()))?;
 
-        Ok(choices.message.content)
+        if choice.finish_reason.as_deref() == Some("length") {
+            log::warn!("LLM response was truncated due to length limit");
+        }
+
+        Ok(choice.message.content)
     }
 }

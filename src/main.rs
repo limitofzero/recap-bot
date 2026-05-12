@@ -4,7 +4,7 @@ use sqlx::{migrate, postgres::PgPoolOptions};
 use teloxide::prelude::*;
 use teloxide::utils::command::BotCommands;
 use crate::domain::commands::Command;
-use crate::services::ai_client::{self, AiClient};
+use crate::services::ai_client::{AiClient};
 
 mod app;
 mod domain;
@@ -51,10 +51,11 @@ async fn main() {
 
     let ai_api_key = std::env::var("AI_API_KEY").expect("AI_API_KEY must be set");
     let ai_url = std::env::var("AI_API_URL").expect("AI_API_URL must be set");
+    let ai_system_propmt = std::env::var("AI_SYSTEM_PROMPT").expect("AI_SYSTEM_PROMPT must be set");
     let ai_model = std::env::var("AI_MODEL").unwrap_or("glm-4".to_string());
     let ai_client = AiClient::new(ai_api_key, ai_url, ai_model);
 
-    let state = app::AppState { pool: pool.clone(), ai_client: Arc::new(ai_client) };
+    let state = app::AppState { pool: pool.clone(), ai_client: Arc::new(ai_client), ai_recap_system_prompt: ai_system_propmt };
 
     let pool_for_health = pool.clone();
     tokio::spawn(async move {

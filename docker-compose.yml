@@ -32,6 +32,7 @@ services:
       AI_API_KEY: ${AI_API_KEY}
       AI_API_URL: ${AI_API_URL}
       AI_MODEL: ${AI_MODEL}
+      AI_SYSTEM_PROMPT: ${AI_SYSTEM_PROMPT}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
       interval: 30s

@@ -18,9 +18,6 @@ pub async fn handle(
         .await?;
         return Ok(());
     }
-    
-    bot.send_message(msg.chat.id, format!("Recap of last {} messages — TODO", count))
-        .await?;
 
     let chat_id = msg.chat_id().map(|chat_id| chat_id.0).unwrap_or(0);
     if chat_id == 0 {
@@ -28,7 +25,7 @@ pub async fn handle(
         bot.send_message(msg.chat.id, format!("Shit is happened!")).await?;
     } else {
         let ai_client = Arc::clone(&_state.ai_client);
-        let response = services::recap::build_recap(&_state.pool, ai_client, chat_id, count).await;
+        let response = services::recap::build_recap(&_state.pool, ai_client, &_state.ai_recap_system_prompt, chat_id, count).await;
         
         match response {
             Ok(response) => {
