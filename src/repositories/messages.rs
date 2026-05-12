@@ -7,7 +7,9 @@ use crate::errors::AppError;
 
 #[derive(Debug, serde::Serialize)]
 pub struct StoredMessage {
-    pub user_id: Option<i64>,
+    pub user_id: i64,
+    pub username: Option<String>,
+    pub first_name: String,
     pub text: Option<String>,
     pub created_at: DateTime<Utc>,
 }
@@ -56,7 +58,6 @@ pub async fn upsert(
     Ok(())
 }
 
-
 pub async fn get_last(
     pool: &PgPool,
     chat_id: i64,
@@ -64,13 +65,19 @@ pub async fn get_last(
 ) -> Result<Vec<StoredMessage>, AppError> {
     let started = Instant::now();
 
-    let messages= sqlx::query_as!(
+    let messages = sqlx::query_as!(
         StoredMessage,
         r#"
-            SELECT user_id, text, created_at
-            FROM messages
-            WHERE chat_id = $1
-            ORDER BY created_at DESC
+            SELECT
+                m.user_id           AS "user_id!: i64",
+                u.username          AS "username?: String",
+                u.first_name        AS "first_name!: String",
+                m.text              AS "text?: String",
+                m.created_at        AS "created_at!: DateTime<Utc>"
+            FROM messages m
+            INNER JOIN users u ON u.id = m.user_id
+            WHERE m.chat_id = $1
+            ORDER BY m.created_at DESC
             LIMIT $2
         "#,
         chat_id,

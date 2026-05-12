@@ -24,6 +24,26 @@ pub async fn save(pool: &PgPool, msg: Message) -> Result<(), AppError> {
     if let MessageKind::Common(_) = &msg.kind {
         repositories::chats::upsert(pool, chat_id, chat_title).await?;
 
+        if let Some(user) = msg.from.as_ref() {
+            repositories::users::upsert_user(
+                pool,
+                user.id.0 as i64,
+                &user.first_name,
+                user.last_name.as_deref(),
+                user.is_bot,
+                user.username.as_deref(),
+                user.is_premium
+            ).await?;
+
+            repositories::chat_members::upsert_chat_member(
+                pool,
+                chat_id,
+                user.id.0 as i64,
+                true,
+                None,
+            ).await?;
+        }
+
         let text = msg.text().unwrap_or_default();
         let edited_at = msg.edit_date().copied();
 

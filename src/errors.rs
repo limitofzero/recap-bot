@@ -21,4 +21,7 @@ pub enum AppError {
 
     #[error("Error fetching ai response: {0}")]
     AiResponse(String),
+
+    #[error("Db query error: {0}")]
+    DbError(String),
 }
