@@ -69,8 +69,14 @@ impl AiClient {
         let body = RequestBody {
             model: &self.model,
             messages: vec![
-                Message { role: "system", content: &system_prompt },
-                Message { role: "user",   content: user_prompt },
+                Message {
+                    role: "system",
+                    content: system_prompt,
+                },
+                Message {
+                    role: "user",
+                    content: user_prompt,
+                },
             ],
         };
 

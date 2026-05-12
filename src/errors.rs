@@ -15,10 +15,6 @@ pub enum AppError {
     #[error("Select messages error for chat_id: {0}: {1}")]
     SelectMessagesError(i64, String),
 
-    #[error("Serialize messages error: {0}")]
-    SerializeMessages(String),
-
-
     #[error("Error fetching ai response: {0}")]
     AiResponse(String),
 

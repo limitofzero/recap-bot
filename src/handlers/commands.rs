@@ -12,7 +12,6 @@ pub fn router() -> UpdateHandler<teloxide::RequestError> {
         .endpoint(dispatch)
 }
 
-
 async fn dispatch(
     bot: Bot,
     msg: Message,
@@ -20,14 +19,11 @@ async fn dispatch(
     state: AppState,
 ) -> Result<(), teloxide::RequestError> {
     let result = match cmd {
-        Command::Help => {
-            bot.send_message(msg.chat.id, Command::descriptions().to_string())
-                .await
-                .map(|_| ())
-        }
-        Command::Recap(count) => {
-            commands::recap::handle(bot, msg, count, state).await
-        },
+        Command::Help => bot
+            .send_message(msg.chat.id, Command::descriptions().to_string())
+            .await
+            .map(|_| ()),
+        Command::Recap(count) => commands::recap::handle(bot, msg, count, state).await,
     };
 
     if let Err(err) = result {

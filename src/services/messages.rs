@@ -32,8 +32,9 @@ pub async fn save(pool: &PgPool, msg: Message) -> Result<(), AppError> {
                 user.last_name.as_deref(),
                 user.is_bot,
                 user.username.as_deref(),
-                user.is_premium
-            ).await?;
+                user.is_premium,
+            )
+            .await?;
 
             repositories::chat_members::upsert_chat_member(
                 pool,
@@ -41,7 +42,8 @@ pub async fn save(pool: &PgPool, msg: Message) -> Result<(), AppError> {
                 user.id.0 as i64,
                 true,
                 None,
-            ).await?;
+            )
+            .await?;
         }
 
         let text = msg.text().unwrap_or_default();

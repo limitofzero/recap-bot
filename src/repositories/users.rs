@@ -1,8 +1,7 @@
-use std::time::Instant;
 use sqlx::PgPool;
+use std::time::Instant;
 
 use crate::errors::AppError;
-
 
 pub async fn upsert_user(
     pool: &PgPool,
@@ -11,7 +10,7 @@ pub async fn upsert_user(
     last_name: Option<&str>,
     is_bot: bool,
     username: Option<&str>,
-    is_premium: bool
+    is_premium: bool,
 ) -> Result<(), AppError> {
     let started = Instant::now();
 
@@ -53,8 +52,13 @@ pub async fn upsert_user(
     )
     .execute(pool)
     .await
-    .map_err(|err| AppError::DbError(format!("insert user {}, first_name: {}, err: {}", id, first_name, err)))?;
-    
+    .map_err(|err| {
+        AppError::DbError(format!(
+            "insert user {}, first_name: {}, err: {}",
+            id, first_name, err
+        ))
+    })?;
+
     metrics::histogram!("bot_db_query_seconds", "operation" => "insert_user")
         .record(started.elapsed().as_secs_f64());
 

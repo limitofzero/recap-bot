@@ -1,15 +1,14 @@
-use std::time::Instant;
 use sqlx::PgPool;
+use std::time::Instant;
 
 use crate::errors::AppError;
-
 
 pub async fn upsert_chat_member(
     pool: &PgPool,
     chat_id: i64,
     user_id: i64,
     is_message: bool,
-    nickname_in_chat: Option<&str>
+    nickname_in_chat: Option<&str>,
 ) -> Result<(), AppError> {
     let started = Instant::now();
 
@@ -41,8 +40,13 @@ pub async fn upsert_chat_member(
     )
     .execute(pool)
     .await
-    .map_err(|err| AppError::DbError(format!("touch chat_member, chat_id: {}, user_id: {}, err: {}", chat_id, user_id, err)))?;
-    
+    .map_err(|err| {
+        AppError::DbError(format!(
+            "touch chat_member, chat_id: {}, user_id: {}, err: {}",
+            chat_id, user_id, err
+        ))
+    })?;
+
     metrics::histogram!("bot_db_query_seconds", "operation" => "insert_user")
         .record(started.elapsed().as_secs_f64());
 

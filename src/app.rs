@@ -10,4 +10,3 @@ pub struct AppState {
     pub ai_client: Arc<AiClient>,
     pub ai_recap_system_prompt: String,
 }
-

@@ -1,6 +1,5 @@
 use teloxide::utils::command::BotCommands;
 
-
 #[derive(BotCommands, Clone, Debug)]
 #[command(rename_rule = "snake_case", description = "Available commands:")]
 pub enum Command {
