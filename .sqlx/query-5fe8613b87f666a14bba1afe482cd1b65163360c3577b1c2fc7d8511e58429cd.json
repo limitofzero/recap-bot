@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                m.user_id           AS \"user_id!: i64\",\n                u.username          AS \"username?: String\",\n                u.first_name        AS \"first_name!: String\",\n                m.text              AS \"text?: String\",\n                m.created_at        AS \"created_at!: DateTime<Utc>\"\n            FROM messages m\n            INNER JOIN users u ON u.id = m.user_id\n            WHERE m.chat_id = $1\n            ORDER BY m.created_at DESC\n            LIMIT $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id!: i64",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "username?: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "first_name!: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "text?: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at!: DateTime<Utc>",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "5fe8613b87f666a14bba1afe482cd1b65163360c3577b1c2fc7d8511e58429cd"
+}

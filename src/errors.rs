@@ -3,12 +3,6 @@ pub enum AppError {
     #[error("Save message error: {0}")]
     SaveMessage(String),
 
-    #[error("Update message error: {0}")]
-    UpdateMessage(String),
-
-    #[error("Parse message error: {0}")]
-    ParseMessage(String),
-
     #[error("Empty chat id for message({0})")]
     EmptyChatId(i64),
 
@@ -17,4 +11,13 @@ pub enum AppError {
 
     #[error("Error when isert or update chat, chat_id: {0}, error: {1}")]
     InsertChatError(i64, String),
+
+    #[error("Select messages error for chat_id: {0}: {1}")]
+    SelectMessagesError(i64, String),
+
+    #[error("Error fetching ai response: {0}")]
+    AiResponse(String),
+
+    #[error("Db query error: {0}")]
+    DbError(String),
 }

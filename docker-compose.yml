@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -28,7 +26,11 @@ services:
     environment:
       TELOXIDE_TOKEN: ${TELOXIDE_TOKEN}
       DATABASE_URL: postgresql://recap_user:recap_password@postgres:5432/recap_bot
-      RUST_LOG: recap_bot=debug,sqlx=debug,info
+      RUST_LOG: recap_bot=debug,info
+      AI_API_KEY: ${AI_API_KEY}
+      AI_API_URL: ${AI_API_URL}
+      AI_MODEL: ${AI_MODEL}
+      AI_SYSTEM_PROMPT: ${AI_SYSTEM_PROMPT}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
       interval: 30s
