@@ -1,5 +1,10 @@
+use std::sync::Arc;
+
 use sqlx::{migrate, postgres::PgPoolOptions};
 use teloxide::prelude::*;
+use teloxide::utils::command::BotCommands;
+use crate::domain::commands::Command;
+use crate::services::ai_client::{self, AiClient};
 
 mod app;
 mod domain;
@@ -8,6 +13,9 @@ mod handlers;
 mod health;
 mod repositories;
 mod services;
+mod commands;
+
+
 
 #[tokio::main]
 async fn main() {
@@ -16,6 +24,9 @@ async fn main() {
     log::info!("Starting bot...");
 
     let bot = Bot::from_env();
+    if let Err(err) = bot.set_my_commands(Command::bot_commands()).await {
+        log::warn!("failed to register bot commands: {}", err);
+    }
 
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
@@ -38,7 +49,12 @@ async fn main() {
         .expect("metrics recorder installation is failed");
     log::info!("metrics recorder installed");
 
-    let state = app::AppState { pool: pool.clone() };
+    let ai_api_key = std::env::var("AI_API_KEY").expect("AI_API_KEY must be set");
+    let ai_url = std::env::var("AI_API_URL").expect("AI_API_URL must be set");
+    let ai_model = std::env::var("AI_MODEL").unwrap_or("glm-4".to_string());
+    let ai_client = AiClient::new(ai_api_key, ai_url, ai_model);
+
+    let state = app::AppState { pool: pool.clone(), ai_client: Arc::new(ai_client) };
 
     let pool_for_health = pool.clone();
     tokio::spawn(async move {
@@ -48,6 +64,7 @@ async fn main() {
     });
 
     let handler = dptree::entry()
+        .branch(handlers::commands::router())
         .branch(Update::filter_message().endpoint(handlers::message::handle))
         .branch(Update::filter_edited_message().endpoint(handlers::message::handle));
 
