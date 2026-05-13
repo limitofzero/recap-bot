@@ -2,22 +2,21 @@ use std::sync::Arc;
 
 use teloxide::{dispatching::dialogue::GetChatId, prelude::*};
 
-use crate::{app::AppState, domain::consts::MAX_MSG_RECAP, services};
+use crate::{
+    app::AppState,
+    domain::consts::{DEFAULT_MSG_RECAP, MAX_MSG_RECAP},
+    services,
+};
 
 pub async fn handle(
     bot: Bot,
     msg: Message,
-    count: usize,
+    args: String,
     _state: AppState,
 ) -> Result<(), teloxide::RequestError> {
-    if count == 0 || count > MAX_MSG_RECAP {
-        bot.send_message(
-            msg.chat.id,
-            "Count must be between 1 and 500. Usage: /recap 100",
-        )
+    let count = parse_count(args);
+    bot.send_message(msg.chat.id, "In progress...".to_string())
         .await?;
-        return Ok(());
-    }
 
     let chat_id = msg.chat_id().map(|chat_id| chat_id.0).unwrap_or(0);
     if chat_id == 0 {
@@ -48,4 +47,23 @@ pub async fn handle(
     }
 
     Ok(())
+}
+
+fn parse_count(args: String) -> usize {
+    if !args.trim().is_empty() {
+        DEFAULT_MSG_RECAP
+    } else {
+        args.trim()
+            .parse()
+            .map(coelse_count)
+            .unwrap_or(DEFAULT_MSG_RECAP)
+    }
+}
+
+fn coelse_count(count: usize) -> usize {
+    if count > MAX_MSG_RECAP || count == 0 {
+        MAX_MSG_RECAP
+    } else {
+        count
+    }
 }

@@ -18,7 +18,7 @@ fn display_name(msg: &StoredMessage) -> String {
 fn format_for_llm(messages: &[StoredMessage]) -> String {
     messages
         .iter()
-        .rev() // БД отдаёт DESC, для LLM показываем oldest → newest
+        .rev()
         .filter_map(|m| {
             let text = m.text.as_ref()?;
             let trimmed = text.trim();

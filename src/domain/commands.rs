@@ -7,5 +7,5 @@ pub enum Command {
     Help,
 
     #[command(description = "Summarize last N messages. Usage: /recap 100, max: 100")]
-    Recap(usize),
+    Recap(String),
 }

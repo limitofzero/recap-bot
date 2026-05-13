@@ -23,7 +23,7 @@ async fn dispatch(
             .send_message(msg.chat.id, Command::descriptions().to_string())
             .await
             .map(|_| ()),
-        Command::Recap(count) => commands::recap::handle(bot, msg, count, state).await,
+        Command::Recap(args) => commands::recap::handle(bot, msg, args, state).await,
     };
 
     if let Err(err) = result {
