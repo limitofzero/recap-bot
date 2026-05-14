@@ -58,7 +58,7 @@ pub async fn upsert_chat_member(
         ))
     })?;
 
-    metrics::histogram!("bot_db_query_seconds", "operation" => "insert_user")
+    metrics::histogram!("bot_db_query_seconds", "operation" => "insert_chat_member")
         .record(started.elapsed().as_secs_f64());
 
     Ok(())
