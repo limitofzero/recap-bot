@@ -23,24 +23,24 @@ fn format_top_members(rows: &[MemberWithMessages]) -> String {
         out.push_str(&format!(
             "{}. {} — <b>{}</b> сообщ.\n",
             i + 1,
-            escape(&display_name(m)), // ← username/имя/whatever
-            m.message_count,          // число — экранировать не надо
+            display_name(m),
+            m.message_count,
         ));
     }
     out
 }
 
 fn display_name(member: &MemberWithMessages) -> String {
-    let nick = member
-        .username
-        .as_ref()
-        .map(|u| format!("@{u}"))
-        .unwrap_or_else(|| italic(&member.first_name));
-
-    let premium_suffix = if member.is_premium {
-        "*зажиточный*"
-    } else {
-        "*нет денег на премиум*"
+    let nick = match member.username.as_deref() {
+        Some(u) => format!("@{}", escape(u)),
+        None => italic(&escape(&member.first_name)),
     };
-    format!("{nick} {}", italic(premium_suffix))
+
+    let suffix = if member.is_premium {
+        italic("зажиточный")
+    } else {
+        italic("нет денег на премиум")
+    };
+
+    format!("{nick} {suffix}")
 }
