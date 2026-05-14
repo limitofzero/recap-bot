@@ -50,7 +50,7 @@ pub async fn handle(
 }
 
 fn parse_count(args: String) -> usize {
-    if !args.trim().is_empty() {
+    if args.trim().is_empty() {
         DEFAULT_MSG_RECAP
     } else {
         args.trim()

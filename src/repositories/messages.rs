@@ -18,7 +18,7 @@ pub async fn upsert(
     pool: &PgPool,
     chat_id: i64,
     message_id: i64,
-    user_id: i64,
+    user_id: Option<i64>,
     text: &str,
     created_at: DateTime<Utc>,
     edited_at: Option<DateTime<Utc>>,

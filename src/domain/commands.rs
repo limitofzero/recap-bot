@@ -8,4 +8,7 @@ pub enum Command {
 
     #[command(description = "Summarize last N messages. Usage: /recap 100, max: 100")]
     Recap(String),
+
+    #[command(description = "Show top 10 active users")]
+    TopMembers,
 }

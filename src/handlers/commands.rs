@@ -24,6 +24,7 @@ async fn dispatch(
             .await
             .map(|_| ()),
         Command::Recap(args) => commands::recap::handle(bot, msg, args, state).await,
+        Command::TopMembers => commands::top_members::handle(bot, msg, state).await,
     };
 
     if let Err(err) = result {

@@ -15,11 +15,7 @@ pub async fn save(pool: &PgPool, msg: Message) -> Result<(), AppError> {
         .ok_or(AppError::EmptyChatId(message_id))?;
     let chat_title = msg.chat.title().unwrap_or_default();
     let created_at = msg.date;
-    let user_id = msg
-        .from
-        .as_ref()
-        .map(|u| u.id.0)
-        .ok_or(AppError::EmptyUserId(message_id, chat_id))?;
+    let user_id = msg.from.as_ref().map(|u| u.id.0 as i64);
 
     if let MessageKind::Common(_) = &msg.kind {
         repositories::chats::upsert(pool, chat_id, chat_title).await?;
@@ -50,13 +46,7 @@ pub async fn save(pool: &PgPool, msg: Message) -> Result<(), AppError> {
         let edited_at = msg.edit_date().copied();
 
         repositories::messages::upsert(
-            pool,
-            chat_id,
-            message_id,
-            user_id as i64,
-            text,
-            created_at,
-            edited_at,
+            pool, chat_id, message_id, user_id, text, created_at, edited_at,
         )
         .await?;
 
