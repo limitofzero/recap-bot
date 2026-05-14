@@ -35,12 +35,12 @@ fn display_name(member: &MemberWithMessages) -> String {
         .username
         .as_ref()
         .map(|u| format!("@{u}"))
-        .unwrap_or(italic(&member.first_name));
+        .unwrap_or_else(|| italic(&member.first_name));
 
     let premium_suffix = if member.is_premium {
         "*зажиточный*"
     } else {
         "*нет денег на премиум*"
     };
-    format!("{nick} {premium_suffix}")
+    format!("{nick} {}", italic(premium_suffix))
 }
