@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
 use crate::errors::AppError;
+use crate::metrics::{self, DbOp};
 
 #[derive(Debug, serde::Serialize)]
 pub struct StoredMessage {
@@ -52,8 +53,7 @@ pub async fn upsert(
     .await
     .map_err(|err| AppError::SaveMessage(err.to_string()))?;
 
-    metrics::histogram!("bot_db_query_seconds", "operation" => "insert_message")
-        .record(started.elapsed().as_secs_f64());
+    metrics::db_query(DbOp::InsertMessage, started.elapsed());
 
     Ok(())
 }
@@ -87,8 +87,7 @@ pub async fn get_last(
     .await
     .map_err(|err| AppError::SelectMessagesError(chat_id, err.to_string()))?;
 
-    metrics::histogram!("bot_db_query_seconds", "operation" => "select_message")
-        .record(started.elapsed().as_secs_f64());
+    metrics::db_query(DbOp::SelectMessage, started.elapsed());
 
     Ok(messages)
 }

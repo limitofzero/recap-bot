@@ -12,6 +12,7 @@ mod domain;
 mod errors;
 mod handlers;
 mod health;
+mod metrics;
 mod repositories;
 mod services;
 

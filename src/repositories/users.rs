@@ -2,6 +2,7 @@ use sqlx::PgPool;
 use std::time::Instant;
 
 use crate::errors::AppError;
+use crate::metrics::{self, DbOp};
 
 pub async fn upsert_user(
     pool: &PgPool,
@@ -59,8 +60,7 @@ pub async fn upsert_user(
         ))
     })?;
 
-    metrics::histogram!("bot_db_query_seconds", "operation" => "insert_user")
-        .record(started.elapsed().as_secs_f64());
+    metrics::db_query(DbOp::UpsertUser, started.elapsed());
 
     Ok(())
 }

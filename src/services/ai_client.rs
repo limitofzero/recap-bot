@@ -110,10 +110,14 @@ impl AiClient {
                 usage.completion_tokens,
                 usage.total_tokens
             );
-            metrics::counter!("bot_llm_tokens_total", "kind" => "prompt")
-                .increment(usage.prompt_tokens as u64);
-            metrics::counter!("bot_llm_tokens_total", "kind" => "completion")
-                .increment(usage.completion_tokens as u64);
+            crate::metrics::llm_tokens(
+                crate::metrics::TokenKind::Prompt,
+                usage.prompt_tokens as u64,
+            );
+            crate::metrics::llm_tokens(
+                crate::metrics::TokenKind::Completion,
+                usage.completion_tokens as u64,
+            );
         }
 
         let choice = parsed

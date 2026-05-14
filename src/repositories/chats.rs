@@ -3,6 +3,7 @@ use std::time::Instant;
 use sqlx::PgPool;
 
 use crate::errors::AppError;
+use crate::metrics::{self, DbOp};
 
 pub async fn upsert(pool: &PgPool, chat_id: i64, title: &str) -> Result<(), AppError> {
     let started = Instant::now();
@@ -21,8 +22,7 @@ pub async fn upsert(pool: &PgPool, chat_id: i64, title: &str) -> Result<(), AppE
     .await
     .map_err(|err| AppError::InsertChatError(chat_id, err.to_string()))?;
 
-    metrics::histogram!("bot_db_query_seconds", "operation" => "insert_chat")
-        .record(started.elapsed().as_secs_f64());
+    metrics::db_query(DbOp::InsertChat, started.elapsed());
 
     Ok(())
 }

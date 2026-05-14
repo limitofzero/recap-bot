@@ -3,10 +3,18 @@ use teloxide::dispatching::dialogue::GetChatId;
 use teloxide::types::{Message, MessageKind};
 
 use crate::errors::AppError;
+use crate::metrics::{self, MessageKind as MetricMessageKind};
 use crate::repositories;
 
 pub async fn save(pool: &PgPool, msg: Message) -> Result<(), AppError> {
-    metrics::counter!("bot_messages_received_total").increment(1);
+    let metric_kind = if msg.edit_date().is_some() {
+        MetricMessageKind::Edit
+    } else if msg.text().map(|t| t.starts_with('/')).unwrap_or(false) {
+        MetricMessageKind::Command
+    } else {
+        MetricMessageKind::Text
+    };
+    metrics::message_received(metric_kind);
 
     let message_id = msg.id.0 as i64;
     let chat_id = msg

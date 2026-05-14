@@ -3,6 +3,7 @@ use sqlx::PgPool;
 use std::time::Instant;
 
 use crate::errors::AppError;
+use crate::metrics::{self, DbOp};
 
 #[derive(Debug, serde::Serialize)]
 pub struct MemberWithMessages {
@@ -58,8 +59,7 @@ pub async fn upsert_chat_member(
         ))
     })?;
 
-    metrics::histogram!("bot_db_query_seconds", "operation" => "insert_chat_member")
-        .record(started.elapsed().as_secs_f64());
+    metrics::db_query(DbOp::UpsertChatMember, started.elapsed());
 
     Ok(())
 }
@@ -94,8 +94,7 @@ pub async fn get_top_members(
     .await
     .map_err(|err| AppError::DbError(format!("get top members for {}, err: {}", chat_id, err)))?;
 
-    metrics::histogram!("bot_db_query_seconds", "operation" => "select_top_members")
-        .record(started.elapsed().as_secs_f64());
+    metrics::db_query(DbOp::SelectTopMembers, started.elapsed());
 
     Ok(top_members)
 }
