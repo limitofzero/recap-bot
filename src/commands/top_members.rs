@@ -8,14 +8,10 @@ use teloxide::{
 
 use crate::{app::AppState, services};
 
-pub async fn handle(
-    bot: Bot,
-    msg: Message,
-    _state: AppState,
-) -> Result<(), teloxide::RequestError> {
+pub async fn handle(bot: Bot, msg: Message, state: AppState) -> Result<(), teloxide::RequestError> {
     let chat_id = msg.chat_id();
     if let Some(chat_id) = chat_id {
-        if let Ok(response) = services::statistics::top_members(&_state.pool, chat_id.0)
+        if let Ok(response) = services::statistics::top_members(&state.pool, chat_id.0)
             .await
             .inspect_err(|err| {
                 log::error!("err when handle top_members: {}", err);

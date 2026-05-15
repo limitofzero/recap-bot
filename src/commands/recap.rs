@@ -12,7 +12,7 @@ pub async fn handle(
     bot: Bot,
     msg: Message,
     args: String,
-    _state: AppState,
+    state: AppState,
 ) -> Result<(), teloxide::RequestError> {
     let count = parse_count(args);
     bot.send_message(msg.chat.id, "In progress...".to_string())
@@ -24,11 +24,11 @@ pub async fn handle(
         bot.send_message(msg.chat.id, "Shit is happened!".to_string())
             .await?;
     } else {
-        let ai_client = Arc::clone(&_state.ai_client);
+        let ai_client = Arc::clone(&state.ai_client);
         let response = services::recap::build_recap(
-            &_state.pool,
+            &state.pool,
             ai_client,
-            &_state.ai_recap_system_prompt,
+            &state.ai_recap_system_prompt,
             chat_id,
             count,
         )
@@ -54,16 +54,8 @@ fn parse_count(args: String) -> usize {
         DEFAULT_MSG_RECAP
     } else {
         args.trim()
-            .parse()
-            .map(coelse_count)
+            .parse::<usize>()
+            .map(|val| val.clamp(1, MAX_MSG_RECAP))
             .unwrap_or(DEFAULT_MSG_RECAP)
-    }
-}
-
-fn coelse_count(count: usize) -> usize {
-    if count > MAX_MSG_RECAP || count == 0 {
-        MAX_MSG_RECAP
-    } else {
-        count
     }
 }

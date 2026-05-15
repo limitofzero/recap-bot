@@ -1,11 +1,13 @@
 use axum::{extract::State, http::StatusCode, routing::get, Router};
 use metrics_exporter_prometheus::PrometheusHandle;
 use sqlx::PgPool;
+use tokio_util::sync::CancellationToken;
 
 pub async fn run(
     pool: PgPool,
     metrics_handler: PrometheusHandle,
     port: u16,
+    shutdown_token: CancellationToken,
 ) -> std::io::Result<()> {
     let app = Router::new()
         .route(
@@ -17,7 +19,10 @@ pub async fn run(
 
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", port)).await?;
     log::info!("health server is stared on port: {}", port);
-    axum::serve(listener, app).await
+
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async move { shutdown_token.cancelled().await })
+        .await
 }
 
 async fn health(State(pool): State<PgPool>) -> StatusCode {

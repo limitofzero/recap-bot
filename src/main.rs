@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::domain::commands::Command;
 use crate::services::ai_client::AiClient;
@@ -15,6 +16,7 @@ mod health;
 mod metrics;
 mod repositories;
 mod services;
+mod shutdown;
 
 #[tokio::main]
 async fn main() {
@@ -51,8 +53,9 @@ async fn main() {
     let ai_api_key = std::env::var("AI_API_KEY").expect("AI_API_KEY must be set");
     let ai_url = std::env::var("AI_API_URL").expect("AI_API_URL must be set");
     let ai_system_propmt = std::env::var("AI_SYSTEM_PROMPT").expect("AI_SYSTEM_PROMPT must be set");
-    let ai_model = std::env::var("AI_MODEL").unwrap_or("glm-4".to_string());
+    let ai_model = std::env::var("AI_MODEL").expect("AI_MODEL must be set");
     let ai_client = AiClient::new(ai_api_key, ai_url, ai_model);
+    let shutdown_token = shutdown::get_shutdown_token();
 
     let state = app::AppState {
         pool: pool.clone(),
@@ -61,9 +64,17 @@ async fn main() {
     };
 
     let pool_for_health = pool.clone();
+    let health_shutdown_token = shutdown_token.clone();
     tokio::spawn(async move {
-        if let Err(err) = health::run(pool_for_health, metrics_handler, 8080).await {
-            log::error!("health server is crushed: {}", err);
+        if let Err(err) = health::run(
+            pool_for_health,
+            metrics_handler,
+            8080,
+            health_shutdown_token,
+        )
+        .await
+        {
+            log::error!("health server is crashed: {}", err);
         }
     });
 
@@ -74,9 +85,22 @@ async fn main() {
 
     let mut dispatcher = Dispatcher::builder(bot, handler)
         .dependencies(dptree::deps![state])
-        .enable_ctrlc_handler()
         .build();
 
-    log::info!("Dispatcher starting");
-    dispatcher.dispatch().await;
+    let dispatcher_shutdown = dispatcher.shutdown_token();
+    let dispatch = tokio::spawn(async move {
+        log::info!("Dispatcher starting");
+        dispatcher.dispatch().await
+    });
+
+    shutdown_token.cancelled().await;
+    let _ = dispatcher_shutdown.shutdown();
+    log::info!("shutdown signal received, draining...");
+
+    match tokio::time::timeout(Duration::from_secs(25), dispatch).await {
+        Ok(_) => log::info!("drained cleanly"),
+        Err(_) => log::warn!("drain timeout"),
+    };
+
+    pool.close().await;
 }
