@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use sqlx::PgPool;
@@ -15,7 +16,25 @@ fn display_name(msg: &StoredMessage) -> String {
     }
 }
 
+fn build_name_map(messages: &[StoredMessage]) -> HashMap<i64, String> {
+    let mut map: HashMap<i64, String> = HashMap::new();
+    for m in messages {
+        let candidate = display_name(m);
+        let candidate_is_handle = candidate.starts_with('@');
+        match map.get(&m.user_id) {
+            Some(existing) if existing.starts_with('@') => {}
+            Some(_) if !candidate_is_handle => {}
+            _ => {
+                map.insert(m.user_id, candidate);
+            }
+        }
+    }
+    map
+}
+
 fn format_for_llm(messages: &[StoredMessage]) -> String {
+    let names = build_name_map(messages);
+
     messages
         .iter()
         .rev()
@@ -26,10 +45,11 @@ fn format_for_llm(messages: &[StoredMessage]) -> String {
                 return None;
             }
             let time = m.created_at.format("%H:%M");
-            Some(format!("[{}] {}: {}", time, display_name(m), trimmed))
+            let name = names.get(&m.user_id).map(String::as_str).unwrap_or("user");
+            Some(format!("--- {} | {} ---\n{}", name, time, trimmed))
         })
         .collect::<Vec<_>>()
-        .join("\n")
+        .join("\n\n")
 }
 
 pub async fn build_recap(

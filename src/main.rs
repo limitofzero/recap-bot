@@ -18,6 +18,8 @@ mod repositories;
 mod services;
 mod shutdown;
 
+const SYSTEM_PROMPT: &str = include_str!("../prompts/system.txt");
+
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
@@ -52,7 +54,6 @@ async fn main() {
 
     let ai_api_key = std::env::var("AI_API_KEY").expect("AI_API_KEY must be set");
     let ai_url = std::env::var("AI_API_URL").expect("AI_API_URL must be set");
-    let ai_system_propmt = std::env::var("AI_SYSTEM_PROMPT").expect("AI_SYSTEM_PROMPT must be set");
     let ai_model = std::env::var("AI_MODEL").expect("AI_MODEL must be set");
     let ai_client = AiClient::new(ai_api_key, ai_url, ai_model);
     let shutdown_token = shutdown::get_shutdown_token();
@@ -60,7 +61,7 @@ async fn main() {
     let state = app::AppState {
         pool: pool.clone(),
         ai_client: Arc::new(ai_client),
-        ai_recap_system_prompt: ai_system_propmt,
+        ai_recap_system_prompt: SYSTEM_PROMPT.trim().to_string(),
     };
 
     let pool_for_health = pool.clone();

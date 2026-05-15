@@ -33,7 +33,6 @@ jobs:
         env:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           TELOXIDE_TOKEN: ${{ secrets.TELOXIDE_TOKEN }}
-          AI_SYSTEM_PROMPT: ${{ secrets.AI_SYSTEM_PROMPT }}
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
           AI_API_URL: ${{ secrets.AI_API_URL }}
           AI_MODEL: ${{ secrets.AI_MODEL }}
@@ -41,7 +40,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: POSTGRES_PASSWORD,TELOXIDE_TOKEN,AI_SYSTEM_PROMPT,AI_API_KEY,AI_API_URL,AI_MODEL
+          envs: POSTGRES_PASSWORD,TELOXIDE_TOKEN,AI_API_KEY,AI_API_URL,AI_MODEL
           script: |
             export KUBECONFIG=/home/limitofzero/.kube/config
             set -e
@@ -60,7 +59,6 @@ jobs:
 
             kubectl -n recap-bot create secret generic recap-bot-secrets \
               --from-literal=TELOXIDE_TOKEN="$TELOXIDE_TOKEN" \
-              --from-literal=AI_SYSTEM_PROMPT="$AI_SYSTEM_PROMPT" \
               --from-literal=AI_API_KEY="$AI_API_KEY" \
               --from-literal=AI_API_URL="$AI_API_URL" \
               --from-literal=AI_MODEL="$AI_MODEL" \
