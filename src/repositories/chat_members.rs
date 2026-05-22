@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
+use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -120,7 +121,7 @@ fn flat_flat_top_users(rows: Vec<FlatMemberWithMessage>) -> Vec<MemberWithMessag
     }
 
     let mut as_vec: Vec<_> = result.into_values().collect();
-    as_vec.sort_by_key(|a| a.message_count);
+    as_vec.sort_by_key(|a| Reverse(a.message_count));
     as_vec
 }
 
