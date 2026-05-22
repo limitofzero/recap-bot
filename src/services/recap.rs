@@ -69,7 +69,9 @@ pub async fn build_recap(
 
     log::debug!("formatted prompt:\n{}", formatted);
 
-    let result = ai_client.make_request(system_prompt, &formatted).await?;
+    let result = ai_client
+        .make_request(system_prompt, &formatted, false)
+        .await?;
     log::debug!("ai response: {}", result);
 
     Ok(result)

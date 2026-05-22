@@ -14,6 +14,14 @@ struct Message<'a> {
 struct RequestBody<'a> {
     model: &'a str,
     messages: Vec<Message<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    response_format: Option<ResponseFormat>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct ResponseFormat {
+    #[serde(rename = "type")]
+    kind: &'static str,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -65,7 +73,16 @@ impl AiClient {
         &self,
         system_prompt: &str,
         user_prompt: &str,
+        as_json: bool,
     ) -> Result<String, AppError> {
+        let response_format = if as_json {
+            Some(ResponseFormat {
+                kind: "json_object",
+            })
+        } else {
+            None
+        };
+
         let body = RequestBody {
             model: &self.model,
             messages: vec![
@@ -78,6 +95,7 @@ impl AiClient {
                     content: user_prompt,
                 },
             ],
+            response_format,
         };
 
         let response = self

@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use crate::domain::commands::Command;
@@ -17,8 +16,6 @@ mod metrics;
 mod repositories;
 mod services;
 mod shutdown;
-
-const SYSTEM_PROMPT: &str = include_str!("../prompts/system.txt");
 
 #[tokio::main]
 async fn main() {
@@ -58,11 +55,7 @@ async fn main() {
     let ai_client = AiClient::new(ai_api_key, ai_url, ai_model);
     let shutdown_token = shutdown::get_shutdown_token();
 
-    let state = app::AppState {
-        pool: pool.clone(),
-        ai_client: Arc::new(ai_client),
-        ai_recap_system_prompt: SYSTEM_PROMPT.trim().to_string(),
-    };
+    let state = app::AppState::new(pool.clone(), ai_client);
 
     let pool_for_health = pool.clone();
     let health_shutdown_token = shutdown_token.clone();

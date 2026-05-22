@@ -4,7 +4,10 @@ use teloxide::{dispatching::dialogue::GetChatId, prelude::*};
 
 use crate::{
     app::AppState,
-    domain::consts::{DEFAULT_MSG_RECAP, MAX_MSG_RECAP},
+    domain::{
+        consts::{DEFAULT_MSG_RECAP, MAX_MSG_RECAP},
+        promts::Prompt,
+    },
     services,
 };
 
@@ -25,14 +28,13 @@ pub async fn handle(
             .await?;
     } else {
         let ai_client = Arc::clone(&state.ai_client);
-        let response = services::recap::build_recap(
-            &state.pool,
-            ai_client,
-            &state.ai_recap_system_prompt,
-            chat_id,
-            count,
-        )
-        .await;
+
+        let prompt = state.ai_system_propmts.get(&Prompt::Recap).ok_or_else(|| {
+            teloxide::ApiError::Unknown(format!("{} prompt wasn't set", Prompt::Recap))
+        })?;
+
+        let response =
+            services::recap::build_recap(&state.pool, ai_client, prompt, chat_id, count).await;
 
         match response {
             Ok(response) => {

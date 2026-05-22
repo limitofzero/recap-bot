@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH top_users AS (\n                SELECT\n                    u.id,\n                    u.first_name,\n                    u.username,\n                    u.is_premium,\n                    ch.message_count,\n                    ch.last_seen_at\n                from chat_members ch\n                INNER JOIN users u ON u.id = ch.user_id\n                WHERE ch.chat_id = $1 AND u.is_bot IS NOT TRUE\n                ORDER BY ch.message_count DESC\n                LIMIT $2\n            )\n            SELECT\n                tu.id AS \"id!: i64\",\n                tu.first_name AS \"first_name!: String\",\n                tu.username AS \"username?: String\",\n                tu.is_premium AS \"is_premium!: bool\",\n                tu.message_count AS \"message_count!: i64\",\n                tu.last_seen_at AS \"last_seen_at!: DateTime<Utc>\",\n                m.text AS \"message_text!: String\",\n                m.created_at AS \"message_created_at!: DateTime<Utc>\"\n            FROM top_users tu\n            LEFT JOIN LATERAL (\n                SELECT\n                    text,\n                    created_at\n                FROM messages\n                WHERE user_id = tu.id AND chat_id = $1 AND text IS NOT NULL AND text <> ''\n                ORDER BY created_at DESC\n                LIMIT $3\n            ) m ON TRUE\n            ORDER BY tu.message_count DESC, m.created_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!: i64",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "first_name!: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "username?: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_premium!: bool",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "message_count!: i64",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "last_seen_at!: DateTime<Utc>",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "message_text!: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "message_created_at!: DateTime<Utc>",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "9f1539f6d0c30d31e97c382896c5411f29a624a7a1002fe3ac2081f7bb001fb7"
+}
