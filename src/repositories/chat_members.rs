@@ -120,7 +120,7 @@ fn flat_flat_top_users(rows: Vec<FlatMemberWithMessage>) -> Vec<MemberWithMessag
     }
 
     let mut as_vec: Vec<_> = result.into_values().collect();
-    as_vec.sort_by(|a, b| a.message_count.cmp(&b.message_count));
+    as_vec.sort_by_key(|a| a.message_count);
     as_vec
 }
 

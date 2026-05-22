@@ -23,7 +23,7 @@ pub async fn handle(bot: Bot, msg: Message, state: AppState) -> Result<(), telox
         if let Ok(response) = services::statistics::top_members(
             &state.pool,
             Arc::clone(&state.ai_client),
-            *prompt,
+            prompt,
             chat_id.0,
         )
         .await
