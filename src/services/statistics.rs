@@ -47,8 +47,8 @@ impl ToxicityCategory {
 
 use crate::{
     errors::AppError,
+    infra::ai_client::AiClient,
     repositories::{self, chat_members::MemberWithMessages},
-    services::ai_client::AiClient,
 };
 
 pub async fn top_members(

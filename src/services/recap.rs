@@ -4,7 +4,7 @@ use std::sync::Arc;
 use sqlx::PgPool;
 
 use crate::repositories::messages::StoredMessage;
-use crate::{errors::AppError, repositories, services::ai_client::AiClient};
+use crate::{errors::AppError, infra::ai_client::AiClient, repositories};
 
 fn display_name(msg: &StoredMessage) -> String {
     if let Some(u) = &msg.username {

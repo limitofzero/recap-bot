@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::domain::commands::Command;
-use crate::services::ai_client::AiClient;
+use crate::infra::ai_client::AiClient;
 use sqlx::{migrate, postgres::PgPoolOptions};
 use teloxide::prelude::*;
 use teloxide::utils::command::BotCommands;
@@ -12,6 +12,7 @@ mod domain;
 mod errors;
 mod handlers;
 mod health;
+mod infra;
 mod metrics;
 mod repositories;
 mod services;

@@ -19,6 +19,29 @@ services:
     networks:
       - recap_network
 
+  redis:
+    image: redis:7-alpine
+    container_name: recap_bot_redis
+    command:
+      - "redis-server"
+      - "--save"
+      - ""
+      - "--appendonly"
+      - "no"
+      - "--maxmemory"
+      - "128mb"
+      - "--maxmemory-policy"
+      - "allkeys-lru"
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - recap_network
+
   # Recap Bot
   recap-bot:
     build: .
@@ -30,7 +53,7 @@ services:
       AI_API_KEY: ${AI_API_KEY}
       AI_API_URL: ${AI_API_URL}
       AI_MODEL: ${AI_MODEL}
-      AI_SYSTEM_PROMPT: ${AI_SYSTEM_PROMPT}
+      REDIS_URL: redis://redis:6379
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
       interval: 30s
@@ -41,6 +64,8 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - recap_network

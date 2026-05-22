@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use sqlx::PgPool;
 
-use crate::{domain::promts::Prompt, services::ai_client::AiClient};
+use crate::{domain::promts::Prompt, infra::ai_client::AiClient};
 
 const SYSTEM_RECAP_PROMPT: &str = include_str!("../prompts/system.txt");
 const SYSTEM_TOP_MEMBERS_PROMPT: &str = include_str!("../prompts/top_members.txt");
