@@ -18,8 +18,8 @@ pub async fn handle(
     state: AppState,
 ) -> Result<(), teloxide::RequestError> {
     if let Some(user_id) = msg.from.as_ref().map(|from| from.id.0) {
-        let rate_limiter = Arc::clone(&state.rate_limiter);
-        if let Err(_) = rate_limiter.check(user_id).await {
+        let rate_limiter = state.rate_limiter.clone();
+        if rate_limiter.check(user_id).await.is_err() {
             bot.send_message(
                 msg.chat.id,
                 "Лимит превышен, так что иди нахуй...".to_string(),

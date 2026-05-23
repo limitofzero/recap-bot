@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use sqlx::PgPool;
 
-use crate::infra::rate_limiter::RateLimiter;
 use crate::repositories::messages::StoredMessage;
 use crate::{errors::AppError, infra::ai_client::AiClient, repositories};
 

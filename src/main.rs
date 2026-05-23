@@ -5,7 +5,6 @@ use crate::domain::consts::DEFAULT_RATE_LIMIT_PER_USER;
 use crate::infra::ai_client::AiClient;
 use crate::infra::rate_limiter::RateLimiter;
 use redis::aio::ConnectionManager;
-use serde_json::from_str;
 use sqlx::{migrate, postgres::PgPoolOptions};
 use teloxide::prelude::*;
 use teloxide::utils::command::BotCommands;
@@ -65,7 +64,7 @@ async fn main() {
     let redis_client = redis::Client::open(redis_url).expect("invalid redis url");
     let redis_connection = ConnectionManager::new(redis_client)
         .await
-        .inspect_err(|err| log::error!("redis connection is failed: {}", err.to_string()))
+        .inspect_err(|err| log::error!("redis connection is failed: {:?}", err))
         .ok();
 
     let rate_per_user: usize = std::env::var("RATE_PER_USER")
