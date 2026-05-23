@@ -41,7 +41,7 @@ pub async fn handle(
         }
         Err(err) => {
             log::error!("error: {}", err);
-            bot.send_message(msg.chat.id, "Shit is happened!".to_string())
+            bot.send_message(msg.chat.id, "Shit happened!".to_string())
                 .await?;
         }
     }
