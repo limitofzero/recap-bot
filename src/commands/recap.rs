@@ -4,6 +4,7 @@ use crate::{
     app::AppState,
     domain::consts::{DEFAULT_MSG_RECAP, MAX_MSG_RECAP},
     domain::promts::Prompt,
+    handlers::rate_limit,
     services,
 };
 
@@ -13,12 +14,8 @@ pub async fn handle(
     args: String,
     state: AppState,
 ) -> Result<(), teloxide::RequestError> {
-    if let Some(user_id) = msg.from.as_ref().map(|from| from.id.0) {
-        if state.rate_limiter.check(user_id).await.is_err() {
-            bot.send_message(msg.chat.id, "Лимит превышен, так что иди нахуй...")
-                .await?;
-            return Ok(());
-        }
+    if !rate_limit::allowed(&bot, &msg, &state.rate_limiter).await? {
+        return Ok(());
     }
 
     let count = parse_count(args);

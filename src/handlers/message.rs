@@ -3,6 +3,7 @@ use teloxide::prelude::*;
 use crate::app::AppState;
 use crate::domain::promts::Prompt;
 use crate::formatters::username::get_username;
+use crate::handlers::rate_limit;
 use crate::services;
 
 pub async fn handle(bot: Bot, msg: Message, state: AppState) -> Result<(), teloxide::RequestError> {
@@ -17,19 +18,14 @@ pub async fn handle(bot: Bot, msg: Message, state: AppState) -> Result<(), telox
     let chat_id = msg.chat.id;
 
     if is_mentioned(&msg, &state.bot.name) || is_reply_to_bot(&msg, state.bot.id) {
-        let Some((user_id, username)) = msg
-            .from
-            .as_ref()
-            .map(|user| (user.id.0, get_username(user)))
-        else {
-            return Ok(());
-        };
-
-        if state.rate_limiter.check(user_id).await.is_err() {
-            bot.send_message(msg.chat.id, "Лимит превышен, так что иди нахуй...")
-                .await?;
+        if !rate_limit::allowed(&bot, &msg, &state.rate_limiter).await? {
             return Ok(());
         }
+
+        let Some(from) = msg.from.as_ref() else {
+            return Ok(());
+        };
+        let username = get_username(from);
 
         let previous_msg = msg.reply_to_message().and_then(|msg| msg.text());
         match services::response_to_user::response(
