@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use teloxide::prelude::*;
 
 use crate::{
@@ -30,14 +28,12 @@ pub async fn handle(
     bot.send_message(msg.chat.id, "In progress...").await?;
 
     let chat_id = msg.chat.id.0;
-    let ai_client = Arc::clone(&state.ai_client);
-
     let prompt = state.ai_system_propmts.get(&Prompt::Recap).ok_or_else(|| {
         teloxide::ApiError::Unknown(format!("{} prompt wasn't set", Prompt::Recap))
     })?;
 
     let response =
-        services::recap::build_recap(&state.pool, ai_client, prompt, chat_id, count).await;
+        services::recap::build_recap(&state.pool, &state.ai_client, prompt, chat_id, count).await;
 
     match response {
         Ok(response) => {

@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use sqlx::PgPool;
 
@@ -54,7 +53,7 @@ fn format_for_llm(messages: &[StoredMessage]) -> String {
 
 pub async fn build_recap(
     pool: &PgPool,
-    ai_client: Arc<AiClient>,
+    ai_client: &AiClient,
     system_prompt: &str,
     chat_id: i64,
     count: usize,
