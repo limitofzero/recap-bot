@@ -18,7 +18,7 @@ pub async fn response(
     username: &str,
 ) -> Result<String, AppError> {
     let chat_id = msg.chat.id.0;
-    let recent_msgs = repositories::messages::get_last(pool, chat_id, 20).await?;
+    let recent_msgs = repositories::messages::get_last(pool, chat_id, 50).await?;
 
     let user_prompt = get_user_prompt(&recent_msgs, msg, username);
 
