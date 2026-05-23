@@ -25,6 +25,8 @@ spec:
           envFrom:
             - secretRef:
                 name: recap-bot-secrets
+            - configMapRef:
+                name: recap-bot-config
           env:
             - name: RUST_LOG
               value: info
