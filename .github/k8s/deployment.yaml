@@ -28,6 +28,8 @@ spec:
           env:
             - name: RUST_LOG
               value: info
+            - name: REDIS_URL
+              value: redis://redis:6379
           resources:
             requests:
               memory: "32Mi"

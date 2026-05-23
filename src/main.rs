@@ -1,7 +1,11 @@
 use std::time::Duration;
 
 use crate::domain::commands::Command;
+use crate::domain::consts::DEFAULT_RATE_LIMIT_PER_USER;
 use crate::infra::ai_client::AiClient;
+use crate::infra::rate_limiter::RateLimiter;
+use redis::aio::ConnectionManager;
+use serde_json::from_str;
 use sqlx::{migrate, postgres::PgPoolOptions};
 use teloxide::prelude::*;
 use teloxide::utils::command::BotCommands;
@@ -50,13 +54,28 @@ async fn main() {
         .expect("metrics recorder installation is failed");
     log::info!("metrics recorder installed");
 
+    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+
     let ai_api_key = std::env::var("AI_API_KEY").expect("AI_API_KEY must be set");
     let ai_url = std::env::var("AI_API_URL").expect("AI_API_URL must be set");
     let ai_model = std::env::var("AI_MODEL").expect("AI_MODEL must be set");
     let ai_client = AiClient::new(ai_api_key, ai_url, ai_model);
     let shutdown_token = shutdown::get_shutdown_token();
 
-    let state = app::AppState::new(pool.clone(), ai_client);
+    let redis_client = redis::Client::open(redis_url).expect("invalid redis url");
+    let redis_connection = ConnectionManager::new(redis_client)
+        .await
+        .inspect_err(|err| log::error!("redis connection is failed: {}", err.to_string()))
+        .ok();
+
+    let rate_per_user: usize = std::env::var("RATE_PER_USER")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(DEFAULT_RATE_LIMIT_PER_USER);
+
+    let rate_limiter = RateLimiter::new(redis_connection, rate_per_user, Duration::from_hours(1));
+
+    let state = app::AppState::new(pool.clone(), ai_client, rate_limiter);
 
     let pool_for_health = pool.clone();
     let health_shutdown_token = shutdown_token.clone();

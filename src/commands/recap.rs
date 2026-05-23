@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use teloxide::{dispatching::dialogue::GetChatId, prelude::*};
+use teloxide::prelude::*;
 
 use crate::{
     app::AppState,
-    domain::{
-        consts::{DEFAULT_MSG_RECAP, MAX_MSG_RECAP},
-        promts::Prompt,
-    },
+    domain::consts::{DEFAULT_MSG_RECAP, MAX_MSG_RECAP},
+    domain::promts::Prompt,
     services,
 };
+
+use teloxide::dispatching::dialogue::GetChatId;
 
 pub async fn handle(
     bot: Bot,
@@ -17,6 +17,18 @@ pub async fn handle(
     args: String,
     state: AppState,
 ) -> Result<(), teloxide::RequestError> {
+    if let Some(user_id) = msg.from.as_ref().map(|from| from.id.0) {
+        let rate_limiter = Arc::clone(&state.rate_limiter);
+        if let Err(_) = rate_limiter.check(user_id).await {
+            bot.send_message(
+                msg.chat.id,
+                "Лимит превышен, так что иди нахуй...".to_string(),
+            )
+            .await?;
+            return Ok(());
+        }
+    }
+
     let count = parse_count(args);
     bot.send_message(msg.chat.id, "In progress...".to_string())
         .await?;
