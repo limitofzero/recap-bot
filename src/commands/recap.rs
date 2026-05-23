@@ -15,11 +15,8 @@ pub async fn handle(
 ) -> Result<(), teloxide::RequestError> {
     if let Some(user_id) = msg.from.as_ref().map(|from| from.id.0) {
         if state.rate_limiter.check(user_id).await.is_err() {
-            bot.send_message(
-                msg.chat.id,
-                "Лимит превышен, так что иди нахуй...".to_string(),
-            )
-            .await?;
+            bot.send_message(msg.chat.id, "Лимит превышен, так что иди нахуй...")
+                .await?;
             return Ok(());
         }
     }
@@ -28,9 +25,9 @@ pub async fn handle(
     bot.send_message(msg.chat.id, "In progress...").await?;
 
     let chat_id = msg.chat.id.0;
-    let prompt = state.ai_system_propmts.get(&Prompt::Recap).ok_or_else(|| {
-        teloxide::ApiError::Unknown(format!("{} prompt wasn't set", Prompt::Recap))
-    })?;
+    let prompt = state
+        .get_promt_or_error(Prompt::Recap)
+        .map_err(|err| teloxide::ApiError::Unknown(err.to_string()))?;
 
     let response =
         services::recap::build_recap(&state.pool, &state.ai_client, prompt, chat_id, count).await;
@@ -41,8 +38,7 @@ pub async fn handle(
         }
         Err(err) => {
             log::error!("error: {}", err);
-            bot.send_message(msg.chat.id, "Shit happened!".to_string())
-                .await?;
+            bot.send_message(msg.chat.id, "Shit happened!").await?;
         }
     }
 

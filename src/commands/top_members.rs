@@ -13,11 +13,8 @@ use crate::{app::AppState, domain::promts::Prompt, services};
 pub async fn handle(bot: Bot, msg: Message, state: AppState) -> Result<(), teloxide::RequestError> {
     let chat_id = msg.chat_id();
     let prompt = state
-        .ai_system_propmts
-        .get(&Prompt::TopMembers)
-        .ok_or_else(|| {
-            teloxide::ApiError::Unknown(format!("{} prompt wasn't set", Prompt::Recap))
-        })?;
+        .get_promt_or_error(Prompt::TopMembers)
+        .map_err(|err| teloxide::ApiError::Unknown(err.to_string()))?;
 
     if let Some(chat_id) = chat_id {
         if let Ok(response) = services::statistics::top_members(

@@ -6,7 +6,7 @@ use crate::errors::AppError;
 use crate::metrics::{self, MessageKind as MetricMessageKind};
 use crate::repositories;
 
-pub async fn save(pool: &PgPool, msg: Message) -> Result<(), AppError> {
+pub async fn save(pool: &PgPool, msg: &Message) -> Result<(), AppError> {
     let metric_kind = if msg.edit_date().is_some() {
         MetricMessageKind::Edit
     } else if msg.text().map(|t| t.starts_with('/')).unwrap_or(false) {

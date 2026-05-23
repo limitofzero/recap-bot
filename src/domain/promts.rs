@@ -4,6 +4,7 @@ use std::fmt;
 pub enum Prompt {
     TopMembers,
     Recap,
+    ResponseToUser,
 }
 
 impl fmt::Display for Prompt {
@@ -11,6 +12,7 @@ impl fmt::Display for Prompt {
         let str = match self {
             Prompt::Recap => "recap",
             Prompt::TopMembers => "top_members",
+            Prompt::ResponseToUser => "response_to_user",
         };
 
         write!(f, "{}", str)

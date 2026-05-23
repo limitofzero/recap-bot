@@ -1,3 +1,5 @@
+use crate::domain::promts::Prompt;
+
 #[derive(thiserror::Error, Debug)]
 pub enum AppError {
     #[error("Save message error: {0}")]
@@ -14,6 +16,9 @@ pub enum AppError {
 
     #[error("Error fetching ai response: {0}")]
     AiResponse(String),
+
+    #[error("Prompt({0}) not found")]
+    PromptNotFound(Prompt),
 
     #[error("Db query error: {0}")]
     DbError(String),

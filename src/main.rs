@@ -14,6 +14,7 @@ mod commands;
 mod config;
 mod domain;
 mod errors;
+mod formatters;
 mod handlers;
 mod health;
 mod infra;
@@ -46,8 +47,8 @@ async fn main() {
     migrate!("./migrations")
         .run(&pool)
         .await
-        .inspect(|_| log::info!("migrations are ok"))
         .expect("migrations failed");
+    log::info!("migrations are ok");
 
     log::info!("start metrics recorder");
     let metrics_handler = metrics_exporter_prometheus::PrometheusBuilder::new()
@@ -70,7 +71,11 @@ async fn main() {
         Duration::from_secs(3600),
     );
 
-    let state = app::AppState::new(pool.clone(), ai_client, rate_limiter);
+    let me = bot.get_me().await.expect("get_me failed");
+    let bot_id = me.id.0;
+    let bot_name = me.user.username.expect("bot name is undefined");
+
+    let state = app::AppState::new(pool.clone(), ai_client, rate_limiter, bot_name, bot_id);
 
     let pool_for_health = pool.clone();
     let health_shutdown_token = shutdown_token.clone();
