@@ -7,7 +7,7 @@ use teloxide::{
 
 use crate::infra::rate_limiter::RateLimiter;
 
-const REJECT_MESSAGE: &str = "Лимит превышен, так что иди нахуй... отдохни часок";
+const REJECT_MESSAGE: &str = "Твой лимит превышен, так что иди нахуй... отдохни часок";
 
 pub async fn allowed(
     bot: &Bot,
