@@ -17,12 +17,12 @@ impl RateLimiter {
     pub fn new(
         connection: Option<ConnectionManager>,
         limit: usize,
-        window_inderval: Duration,
+        window_interval: Duration,
     ) -> Self {
         Self {
             connection,
             limit: limit as isize,
-            window_secs: window_inderval.as_secs() as i64,
+            window_secs: window_interval.as_secs() as i64,
         }
     }
 
