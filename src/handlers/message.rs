@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use teloxide::prelude::*;
 
 use crate::app::AppState;
@@ -12,26 +10,27 @@ pub async fn handle(bot: Bot, msg: Message, state: AppState) -> Result<(), telox
         log::error!("handle message error: {}", err);
     }
 
-    let Some((user_id, username)) = msg
-        .from
-        .as_ref()
-        .map(|user| (user.id.0, get_username(user)))
-    else {
-        return Ok(());
-    };
-
-    if state.rate_limiter.check(user_id).await.is_err() {
-        bot.send_message(msg.chat.id, "Лимит превышен, так что иди нахуй...")
-            .await?;
-        return Ok(());
-    }
-
     let sys_prompt = state
         .get_promt_or_error(Prompt::ResponseToUser)
         .map_err(|err| teloxide::ApiError::Unknown(err.to_string()))?;
 
     let chat_id = msg.chat.id;
+    // let previous_msg = msg.reply_to_message().as_ref().map(|msg| msg.text())
     if is_mentioned(&msg, &state.bot.name) {
+        let Some((user_id, username)) = msg
+            .from
+            .as_ref()
+            .map(|user| (user.id.0, get_username(user)))
+        else {
+            return Ok(());
+        };
+
+        if state.rate_limiter.check(user_id).await.is_err() {
+            bot.send_message(msg.chat.id, "Лимит превышен, так что иди нахуй...")
+                .await?;
+            return Ok(());
+        }
+
         match services::response_to_user::response(
             &msg,
             &state.pool,
