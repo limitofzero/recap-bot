@@ -9,8 +9,6 @@ use crate::{
     services,
 };
 
-use teloxide::dispatching::dialogue::GetChatId;
-
 pub async fn handle(
     bot: Bot,
     msg: Message,
@@ -18,8 +16,7 @@ pub async fn handle(
     state: AppState,
 ) -> Result<(), teloxide::RequestError> {
     if let Some(user_id) = msg.from.as_ref().map(|from| from.id.0) {
-        let rate_limiter = state.rate_limiter.clone();
-        if rate_limiter.check(user_id).await.is_err() {
+        if state.rate_limiter.check(user_id).await.is_err() {
             bot.send_message(
                 msg.chat.id,
                 "Лимит превышен, так что иди нахуй...".to_string(),
@@ -30,33 +27,26 @@ pub async fn handle(
     }
 
     let count = parse_count(args);
-    bot.send_message(msg.chat.id, "In progress...".to_string())
-        .await?;
+    bot.send_message(msg.chat.id, "In progress...").await?;
 
-    let chat_id = msg.chat_id().map(|chat_id| chat_id.0).unwrap_or(0);
-    if chat_id == 0 {
-        log::error!("chat_id is empty for message_id: {}", msg.id.0);
-        bot.send_message(msg.chat.id, "Shit is happened!".to_string())
-            .await?;
-    } else {
-        let ai_client = Arc::clone(&state.ai_client);
+    let chat_id = msg.chat.id.0;
+    let ai_client = Arc::clone(&state.ai_client);
 
-        let prompt = state.ai_system_propmts.get(&Prompt::Recap).ok_or_else(|| {
-            teloxide::ApiError::Unknown(format!("{} prompt wasn't set", Prompt::Recap))
-        })?;
+    let prompt = state.ai_system_propmts.get(&Prompt::Recap).ok_or_else(|| {
+        teloxide::ApiError::Unknown(format!("{} prompt wasn't set", Prompt::Recap))
+    })?;
 
-        let response =
-            services::recap::build_recap(&state.pool, ai_client, prompt, chat_id, count).await;
+    let response =
+        services::recap::build_recap(&state.pool, ai_client, prompt, chat_id, count).await;
 
-        match response {
-            Ok(response) => {
-                bot.send_message(msg.chat.id, response).await?;
-            }
-            Err(err) => {
-                log::error!("error: {}", err);
-                bot.send_message(msg.chat.id, "Shit is happened!".to_string())
-                    .await?;
-            }
+    match response {
+        Ok(response) => {
+            bot.send_message(msg.chat.id, response).await?;
+        }
+        Err(err) => {
+            log::error!("error: {}", err);
+            bot.send_message(msg.chat.id, "Shit is happened!".to_string())
+                .await?;
         }
     }
 
