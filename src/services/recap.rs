@@ -1,10 +1,9 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use sqlx::PgPool;
 
 use crate::repositories::messages::StoredMessage;
-use crate::{errors::AppError, repositories, services::ai_client::AiClient};
+use crate::{errors::AppError, infra::ai_client::AiClient, repositories};
 
 fn display_name(msg: &StoredMessage) -> String {
     if let Some(u) = &msg.username {
@@ -54,7 +53,7 @@ fn format_for_llm(messages: &[StoredMessage]) -> String {
 
 pub async fn build_recap(
     pool: &PgPool,
-    ai_client: Arc<AiClient>,
+    ai_client: &AiClient,
     system_prompt: &str,
     chat_id: i64,
     count: usize,

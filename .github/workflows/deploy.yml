@@ -36,11 +36,12 @@ jobs:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
           AI_API_URL: ${{ secrets.AI_API_URL }}
           AI_MODEL: ${{ secrets.AI_MODEL }}
+          RATE_PER_USER: ${{ vars.RATE_PER_USER }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: POSTGRES_PASSWORD,TELOXIDE_TOKEN,AI_API_KEY,AI_API_URL,AI_MODEL
+          envs: POSTGRES_PASSWORD,TELOXIDE_TOKEN,AI_API_KEY,AI_API_URL,AI_MODEL,RATE_PER_USER
           script: |
             export KUBECONFIG=/home/limitofzero/.kube/config
             set -e
@@ -54,8 +55,14 @@ jobs:
               --dry-run=client -o yaml | kubectl apply -f -
 
             kubectl apply -f /tmp/k8s-manifests/postgres.yaml
-
             kubectl rollout status statefulset/postgres -n recap-bot --timeout=2m
+
+            kubectl apply -f /tmp/k8s-manifests/redis.yaml
+            kubectl rollout status deployment/redis -n recap-bot --timeout=2m
+
+            kubectl -n recap-bot create configmap recap-bot-config \
+              --from-literal=RATE_PER_USER="$RATE_PER_USER" \
+              --dry-run=client -o yaml | kubectl apply -f -
 
             kubectl -n recap-bot create secret generic recap-bot-secrets \
               --from-literal=TELOXIDE_TOKEN="$TELOXIDE_TOKEN" \

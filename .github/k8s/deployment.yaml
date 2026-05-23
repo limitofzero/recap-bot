@@ -25,9 +25,13 @@ spec:
           envFrom:
             - secretRef:
                 name: recap-bot-secrets
+            - configMapRef:
+                name: recap-bot-config
           env:
             - name: RUST_LOG
               value: info
+            - name: REDIS_URL
+              value: redis://redis:6379
           resources:
             requests:
               memory: "32Mi"
