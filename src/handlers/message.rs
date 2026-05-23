@@ -15,8 +15,8 @@ pub async fn handle(bot: Bot, msg: Message, state: AppState) -> Result<(), telox
         .map_err(|err| teloxide::ApiError::Unknown(err.to_string()))?;
 
     let chat_id = msg.chat.id;
-    // let previous_msg = msg.reply_to_message().as_ref().map(|msg| msg.text())
-    if is_mentioned(&msg, &state.bot.name) {
+
+    if is_mentioned(&msg, &state.bot.name) || is_reply_to_bot(&msg, state.bot.id) {
         let Some((user_id, username)) = msg
             .from
             .as_ref()
@@ -31,12 +31,14 @@ pub async fn handle(bot: Bot, msg: Message, state: AppState) -> Result<(), telox
             return Ok(());
         }
 
+        let previous_msg = msg.reply_to_message().and_then(|msg| msg.text());
         match services::response_to_user::response(
             &msg,
             &state.pool,
             &state.ai_client,
             sys_prompt,
             &username,
+            previous_msg,
         )
         .await
         {
