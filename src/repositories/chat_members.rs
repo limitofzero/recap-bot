@@ -71,7 +71,7 @@ pub async fn get_top_members_with_messages(
                 m.text AS "message_text!: String",
                 m.created_at AS "message_created_at!: DateTime<Utc>"
             FROM top_users tu
-            LEFT JOIN LATERAL (
+            INNER JOIN LATERAL (
                 SELECT
                     text,
                     created_at
