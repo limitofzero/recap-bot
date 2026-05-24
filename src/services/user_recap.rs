@@ -34,6 +34,7 @@ fn format_for_llm(username: &str, messages: &[StoredUserMessage]) -> String {
             formatters::ai_summary::format_message(&msg.text, &msg.created_at)
         {
             out.push_str(&formatted_msg);
+            out.push_str("\n\n");
         }
     }
 
