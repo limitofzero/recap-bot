@@ -111,7 +111,7 @@ fn flat_flat_top_users(rows: Vec<FlatMemberWithMessage>) -> Vec<MemberWithMessag
             username: row.username,
             first_name: row.first_name,
             last_seen_at: row.last_seen_at,
-            messages: Vec::with_capacity(1),
+            messages: vec![],
         });
 
         entry.messages.push(Message {
