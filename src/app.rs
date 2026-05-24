@@ -11,6 +11,7 @@ use crate::{
 const SYSTEM_RECAP_PROMPT: &str = include_str!("../prompts/system.txt");
 const SYSTEM_TOP_MEMBERS_PROMPT: &str = include_str!("../prompts/top_members.txt");
 const RESPONSE_TO_USER: &str = include_str!("../prompts/response_to_user.txt");
+const USER_RECAP_PROMPT: &str = include_str!("../prompts/user_recap.txt");
 
 #[derive(Clone)]
 pub struct Bot {
@@ -60,6 +61,7 @@ impl AppState {
         promts.insert(Prompt::Recap, SYSTEM_RECAP_PROMPT);
         promts.insert(Prompt::TopMembers, SYSTEM_TOP_MEMBERS_PROMPT);
         promts.insert(Prompt::ResponseToUser, RESPONSE_TO_USER);
+        promts.insert(Prompt::UserRecap, USER_RECAP_PROMPT);
 
         promts
     }

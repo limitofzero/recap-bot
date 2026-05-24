@@ -39,6 +39,7 @@ pub enum DbOp {
     UpsertChatMember,
     UpsertUser,
     SelectTopMembers,
+    SelectRecentUsersMessages,
 }
 
 impl DbOp {
@@ -50,6 +51,7 @@ impl DbOp {
             Self::UpsertChatMember => "upsert_chat_member",
             Self::UpsertUser => "upsert_user",
             Self::SelectTopMembers => "select_top_members",
+            Self::SelectRecentUsersMessages => "select_recent_user_messages",
         }
     }
 }

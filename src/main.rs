@@ -22,6 +22,7 @@ mod metrics;
 mod repositories;
 mod services;
 mod shutdown;
+mod validators;
 
 #[tokio::main]
 async fn main() {

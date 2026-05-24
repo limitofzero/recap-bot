@@ -15,6 +15,12 @@ pub struct StoredMessage {
     pub created_at: DateTime<Utc>,
 }
 
+#[derive(Debug, serde::Serialize)]
+pub struct StoredUserMessage {
+    pub text: String,
+    pub created_at: DateTime<Utc>,
+}
+
 pub async fn upsert(
     pool: &PgPool,
     chat_id: i64,
@@ -90,4 +96,41 @@ pub async fn get_last(
     metrics::db_query(DbOp::SelectMessage, started.elapsed());
 
     Ok(messages)
+}
+
+pub async fn get_last_by_user(
+    pool: &PgPool,
+    chat_id: i64,
+    normalized_username: &str,
+    count: i64,
+) -> Result<Vec<StoredUserMessage>, AppError> {
+    let started = Instant::now();
+
+    let msgs = sqlx::query_as!(
+        StoredUserMessage,
+        r#"
+            SELECT
+                m.text AS "text!: String",
+                m.created_at AS "created_at!: DateTime<Utc>"
+            FROM users u
+            INNER JOIN messages m
+            ON
+                m.user_id = u.id
+            WHERE
+                m.chat_id = $2
+                AND (u.username = $1 OR u.first_name = $1)
+                AND m.text IS NOT NULL AND m.text <> ''
+            ORDER BY m.created_at DESC
+            LIMIT $3
+        "#,
+        normalized_username,
+        chat_id,
+        count
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|err| AppError::DbError(err.to_string()))?;
+
+    metrics::db_query(DbOp::SelectRecentUsersMessages, started.elapsed());
+    Ok(msgs)
 }
