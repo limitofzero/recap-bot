@@ -11,4 +11,7 @@ pub enum Command {
 
     #[command(description = "Show top 10 active users")]
     TopMembers,
+
+    #[command(description = "User recap. Usage: /user-recap @username")]
+    UserRecap(String),
 }

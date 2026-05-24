@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use chrono::{DateTime, Utc};
+
 use crate::repositories::messages::StoredMessage;
 
 pub fn display_name(msg: &StoredMessage) -> String {
@@ -35,15 +37,19 @@ pub fn format_messages_for_llm(messages: &[StoredMessage]) -> String {
         .iter()
         .rev()
         .filter_map(|m| {
-            let text = m.text.as_ref()?;
-            let trimmed = text.trim();
-            if trimmed.is_empty() || trimmed.starts_with('/') {
-                return None;
-            }
-            let time = m.created_at.format("%H:%M");
+            let formatted_message = format_message(m.text.as_ref()?, &m.created_at)?;
             let name = names.get(&m.user_id).map(String::as_str).unwrap_or("user");
-            Some(format!("--- {} | {} ---\n{}", name, time, trimmed))
+            Some(format!("--- {} {}", name, formatted_message))
         })
         .collect::<Vec<_>>()
         .join("\n\n")
+}
+
+pub fn format_message(text: &str, created_at: &DateTime<Utc>) -> Option<String> {
+    let trimmed = text.trim();
+    if trimmed.is_empty() || trimmed.starts_with('/') {
+        return None;
+    }
+    let time = created_at.format("%H:%M");
+    Some(format!("| {} ---\n{}", time, trimmed))
 }

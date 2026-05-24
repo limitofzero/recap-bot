@@ -5,6 +5,7 @@ pub enum Prompt {
     TopMembers,
     Recap,
     ResponseToUser,
+    UserRecap,
 }
 
 impl fmt::Display for Prompt {
@@ -13,6 +14,7 @@ impl fmt::Display for Prompt {
             Prompt::Recap => "recap",
             Prompt::TopMembers => "top_members",
             Prompt::ResponseToUser => "response_to_user",
+            Prompt::UserRecap => "user_recap",
         };
 
         write!(f, "{}", str)
